@@ -53,7 +53,7 @@ document.getElementById('imageInput').addEventListener('change', function(event)
     document.getElementById('counter').innerText = `${uploadedImages.length} / ${maxImages} صور`;
 });
 
-// ================= إرسال الصور للتحليل (عبر Fetch API) =================
+// ================= إرسال الصور للتحليل (بربط رقم المشروع 259) =================
 async function submitImages() {
     if (uploadedImages.length === 0) {
         alert("الرجاء التقاط أو رفع صورة واحدة على الأقل");
@@ -65,7 +65,7 @@ async function submitImages() {
     submitBtn.disabled = true;
 
     try {
-        // تحويل الصور إلى Base64 لإرسالها
+        // تحويل الصور إلى Base64
         const imagesData = [];
         for (let i = 0; i < uploadedImages.length; i++) {
             const reader = new FileReader();
@@ -76,15 +76,15 @@ async function submitImages() {
             imagesData.push(dataUrl);
         }
 
-        // إرسال الطلب إلى خادم جمال تك (هنا نضع الرابط الأساسي الخاص بالمنصة)
-        // ملاحظة: هذه خطوة تجريبية أولية، سنحتاج لتحديد رابط الـ API الدقيق من لوحة تحكم جمال تك لاحقاً
+        // إرسال الطلب إلى خادم جمال تك مع رقم المشروع
         const response = await fetch('https://api.gammal.tech/v1/analyze', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // ضع هنا المفتاح الخاص بك إذا كان متوفراً، أو سنستخدم الـ SDK الذي تم وضعه في الأعلى
+                // إذا طلب منك مفتاح API، ضعه هنا. حالياً سنستخدم رقم المشروع.
             },
             body: JSON.stringify({
+                projectId: 259, // <--- تم إضافة رقم المشروع هنا
                 images: imagesData,
                 grade: localStorage.getItem('selectedGrade'),
                 subject: localStorage.getItem('selectedSubject')
@@ -93,17 +93,15 @@ async function submitImages() {
 
         const data = await response.json();
         
-        // عرض النتيجة (سنتحدث لاحقاً عن طريقة عرض الشرح والأسئلة)
         alert("تم التحليل بنجاح! (سيتم عرض النتائج هنا لاحقاً)");
         console.log("نتيجة التحليل:", data);
 
-        // إعادة تعيين الأزرار
         submitBtn.innerText = "التالي: تحليل الدرس";
         submitBtn.disabled = false;
 
     } catch (error) {
         console.error(error);
-        alert("حدث خطأ أثناء الاتصال بالخادم. تأكد من نشر الموقع على الإنترنت أولاً.");
+        alert("حدث خطأ. تأكد من إضافة projectId بشكل صحيح.");
         submitBtn.innerText = "التالي: تحليل الدرس";
         submitBtn.disabled = false;
     }
