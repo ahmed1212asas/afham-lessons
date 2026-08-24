@@ -1,0 +1,16 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background: #f0f4ff;
+}
+.container { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center; }
+.step { display: none; }
+.step.active { display: block; }
+button { background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 16px; margin-top: 15px; cursor: pointer; width: 100%; }
+input, select { padding: 10px; margin: 8px 0; width: 100%; border: 1px solid #ccc; border-radius: 8px; }
+#preview img { width: 60px; height: 60px; margin: 5px; border-radius: 5px; border: 1px solid #ccc; }
+#aiResult { margin-top: 20px; text-align: right; padding: 15px; background: #f9f9f9; border-radius: 8px; white-space: pre-wrap; }
