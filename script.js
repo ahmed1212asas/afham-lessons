@@ -1,10 +1,7 @@
 // ================= تسجيل الدخول =================
 function login() {
     const username = document.getElementById('username').value;
-    if (username === "") {
-        alert("الرجاء إدخال اسم الطالب");
-        return;
-    }
+    if (username === "") { alert("الرجاء إدخال اسم الطالب"); return; }
     document.getElementById('login-screen').classList.remove('active');
     document.getElementById('class-screen').classList.add('active');
     localStorage.setItem('studentName', username);
@@ -14,10 +11,7 @@ function login() {
 function startLesson() {
     const grade = document.getElementById('grade-select').value;
     const subject = document.getElementById('subject-select').value;
-    if (grade === "" || subject === "") {
-        alert("الرجاء اختيار الصف والمادة");
-        return;
-    }
+    if (grade === "" || subject === "") { alert("الرجاء اختيار الصف والمادة"); return; }
     localStorage.setItem('selectedGrade', grade);
     localStorage.setItem('selectedSubject', subject);
     document.getElementById('class-screen').classList.remove('active');
@@ -53,51 +47,45 @@ document.getElementById('imageInput').addEventListener('change', function(event)
     document.getElementById('counter').innerText = `${uploadedImages.length} / ${maxImages} صور`;
 });
 
-// ================= إرسال الصور للتحليل (استخدام مكتبة GammalTech) =================
+// ================= التحليل باستخدام GammalTech.ai =================
 async function submitImages() {
     if (uploadedImages.length === 0) {
         alert("الرجاء التقاط أو رفع صورة واحدة على الأقل");
         return;
     }
-
     const submitBtn = document.querySelector('button[onclick="submitImages()"]');
     submitBtn.innerText = "جاري تحليل الدرس...";
     submitBtn.disabled = true;
-
     try {
-        // التأكد من أن مكتبة GammalTech تم تحميلها
-        if (typeof GammalTech === 'undefined') {
-            throw new Error("مكتبة GammalTech غير محملة في الصفحة!");
-        }
-
-        // تحويل الصور إلى Base64
-        const imagesData = [];
+        let textData = "";
         for (let i = 0; i < uploadedImages.length; i++) {
-            const reader = new FileReader();
             const dataUrl = await new Promise((resolve) => {
+                const reader = new FileReader();
                 reader.onload = (e) => resolve(e.target.result);
                 reader.readAsDataURL(uploadedImages[i]);
             });
-            imagesData.push(dataUrl);
+            textData += `صورة ${i + 1}: ${dataUrl}\n`;
+        }
+        let prompt = `حلل الصور التالية واستخرج منها محتوى الدرس مع شرح مبسط:\n${textData}`;
+        
+        let token = null;
+        if (GammalTech.isLoggedIn()) {
+            token = GammalTech.getToken();
         }
 
-        // استدعاء دالة التحليل من مكتبة GammalTech
-        // (ملاحظة: الدالة الرسمية قد تختلف قليلاً حسب إصدار الـ SDK، لكن هذه هي الطريقة القياسية)
-        const result = await GammalTech.AI.analyze({
-            images: imagesData,
-            grade: localStorage.getItem('selectedGrade'),
-            subject: localStorage.getItem('selectedSubject')
-        });
+        let result;
+        if (token) {
+            result = await GammalTech.ai.chat(token, prompt);
+        } else {
+            result = await GammalTech.ai.ask(prompt);
+        }
 
-        alert("تم التحليل بنجاح! سيتم عرض النتائج هنا لاحقاً.");
-        console.log("نتيجة التحليل:", result);
-
+        alert(`تم التحليل بنجاح!\n${result}`);
         submitBtn.innerText = "التالي: تحليل الدرس";
         submitBtn.disabled = false;
-
     } catch (error) {
-        console.error("خطأ GammalTech:", error);
-        alert("حدث خطأ: " + error.message);
+        console.error(error);
+        alert("حدث خطأ أثناء التحليل، تأكد من الاتصال بالإنترنت.");
         submitBtn.innerText = "التالي: تحليل الدرس";
         submitBtn.disabled = false;
     }
