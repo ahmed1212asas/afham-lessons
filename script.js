@@ -1,46 +1,71 @@
-let studentData = {};
-
+// ================= تسجيل الدخول =================
 function startApp() {
-    let name = document.getElementById('studentName').value;
-    if (!name) return alert("اكتب اسمك");
-    studentData.name = name;
-    goTo('step-subject');
+    const username = document.getElementById('studentName').value;
+    if (username === "") {
+        alert("الرجاء إدخال اسم الطالب");
+        return;
+    }
+    localStorage.setItem('studentName', username);
+    document.getElementById('step-login').classList.remove('active');
+    document.getElementById('step-subject').classList.add('active');
 }
 
+// ================= اختيار الصف والمادة =================
 function startLesson() {
-    let grade = document.getElementById('grade').value;
-    let subject = document.getElementById('subject').value;
-    if (!grade || !subject) return alert("اختر الصف والمادة");
-    studentData.grade = grade;
-    studentData.subject = subject;
-    goTo('step-upload');
+    const grade = document.getElementById('grade').value;
+    const subject = document.getElementById('subject').value;
+    if (grade === "" || subject === "") {
+        alert("الرجاء اختيار الصف والمادة");
+        return;
+    }
+    localStorage.setItem('selectedGrade', grade);
+    localStorage.setItem('selectedSubject', subject);
+    document.getElementById('step-subject').classList.remove('active');
+    document.getElementById('step-upload').classList.add('active');
 }
 
-function showPreview() {
-    const files = document.getElementById('images').files;
-    let preview = document.getElementById('preview');
+// ================= شاشة رفع الصور =================
+let uploadedImages = [];
+const maxImages = 5;
+
+document.getElementById('images').addEventListener('change', function(event) {
+    const files = event.target.files;
+    if (files.length > maxImages) {
+        alert(`يمكنك رفع ${maxImages} صور فقط.`);
+        return;
+    }
+    uploadedImages = files;
+    const preview = document.getElementById('preview');
     preview.innerHTML = '';
-    if (files.length > 5) return alert("الحد الأقصى 5 صور");
     for (let i = 0; i < files.length; i++) {
-        let img = document.createElement('img');
+        const img = document.createElement('img');
         img.src = URL.createObjectURL(files[i]);
         preview.appendChild(img);
     }
-}
+});
 
+// ================= تحليل الصور (قراءة النص) =================
 async function analyzeLesson() {
     const resultBox = document.getElementById('aiResult');
-    resultBox.innerText = "جاري التحليل...";
-
-    // ***** ملاحظة: هذه محاكاة للتحليل ويجب ربطها بخدمة حقيقية لاحقاً *****
-    // بما أن مشروعك يعاني من تعقيد جمال تك، سنجعل التحليل يعمل محلياً باستخدام مكتبات مجانية للعرض فقط
+    resultBox.innerText = "جاري قراءة النصوص من الصور...";
     
-    setTimeout(() => {
-        resultBox.innerText = `مرحباً ${studentData.name}!\n\nتم تحليل الصور بنجاح.\nالصف: ${studentData.grade}\nالمادة: ${studentData.subject}\n\n(هذه نتيجة تجريبية، سنقوم بربط الخدمة الحقيقية لاحقاً)`;
-    }, 1500);
-}
-
-function goTo(stepId) {
-    document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
-    document.getElementById(stepId).classList.add('active');
+    try {
+        // تحميل مكتبة Tesseract.js المجانية (تحدث في المتصفح مباشرة)
+        const worker = await Tesseract.createWorker('ara');
+        
+        let fullText = "";
+        for (let i = 0; i < uploadedImages.length; i++) {
+            const { data: { text } } = await worker.recognize(uploadedImages[i]);
+            fullText += `\n--- صفحة ${i + 1} ---\n${text}`;
+        }
+        
+        await worker.terminate();
+        
+        // عرض النص المستخرج
+        resultBox.innerText = `تم قراءة الدرس بنجاح!\n\nالنص المستخرج:\n${fullText}`;
+        
+    } catch (error) {
+        console.error(error);
+        resultBox.innerText = "حدث خطأ أثناء قراءة النص. حاول مرة أخرى.";
+    }
 }
