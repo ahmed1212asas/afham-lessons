@@ -53,7 +53,7 @@ document.getElementById('imageInput').addEventListener('change', function(event)
     document.getElementById('counter').innerText = `${uploadedImages.length} / ${maxImages} صور`;
 });
 
-// ================= إرسال الصور للتحليل (بربط رقم المشروع 259) =================
+// ================= إرسال الصور للتحليل (استخدام مكتبة GammalTech) =================
 async function submitImages() {
     if (uploadedImages.length === 0) {
         alert("الرجاء التقاط أو رفع صورة واحدة على الأقل");
@@ -65,6 +65,11 @@ async function submitImages() {
     submitBtn.disabled = true;
 
     try {
+        // التأكد من أن مكتبة GammalTech تم تحميلها
+        if (typeof GammalTech === 'undefined') {
+            throw new Error("مكتبة GammalTech غير محملة في الصفحة!");
+        }
+
         // تحويل الصور إلى Base64
         const imagesData = [];
         for (let i = 0; i < uploadedImages.length; i++) {
@@ -76,32 +81,23 @@ async function submitImages() {
             imagesData.push(dataUrl);
         }
 
-        // إرسال الطلب إلى خادم جمال تك مع رقم المشروع
-        const response = await fetch('https://api.gammal.tech/v1/analyze', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                // إذا طلب منك مفتاح API، ضعه هنا. حالياً سنستخدم رقم المشروع.
-            },
-            body: JSON.stringify({
-                projectId: 259, // <--- تم إضافة رقم المشروع هنا
-                images: imagesData,
-                grade: localStorage.getItem('selectedGrade'),
-                subject: localStorage.getItem('selectedSubject')
-            })
+        // استدعاء دالة التحليل من مكتبة GammalTech
+        // (ملاحظة: الدالة الرسمية قد تختلف قليلاً حسب إصدار الـ SDK، لكن هذه هي الطريقة القياسية)
+        const result = await GammalTech.AI.analyze({
+            images: imagesData,
+            grade: localStorage.getItem('selectedGrade'),
+            subject: localStorage.getItem('selectedSubject')
         });
 
-        const data = await response.json();
-        
-        alert("تم التحليل بنجاح! (سيتم عرض النتائج هنا لاحقاً)");
-        console.log("نتيجة التحليل:", data);
+        alert("تم التحليل بنجاح! سيتم عرض النتائج هنا لاحقاً.");
+        console.log("نتيجة التحليل:", result);
 
         submitBtn.innerText = "التالي: تحليل الدرس";
         submitBtn.disabled = false;
 
     } catch (error) {
-        console.error(error);
-        alert("حدث خطأ. تأكد من إضافة projectId بشكل صحيح.");
+        console.error("خطأ GammalTech:", error);
+        alert("حدث خطأ: " + error.message);
         submitBtn.innerText = "التالي: تحليل الدرس";
         submitBtn.disabled = false;
     }
