@@ -1,5 +1,5 @@
-// ===== إعدادات Gemini (المفتاح يعمل مباشرة) =====
-const GEMINI_API_KEY = "AQ.Ab8RN6KMxBpYpfQxuj0ZOk5kkPYvJcDEfMUN47xpM5NjWNY-Vg";
+// ===== إعدادات Gemini (المفتاح الصحيح الذي أرسلته لي) =====
+const GEMINI_API_KEY = "AQ.Ab8RN6JcD_tsrsAgx6Rt--bP-1VI92OQ7qTfRByA4wIBObMiDw";
 
 // ================= تسجيل الدخول =================
 function startApp() {
@@ -58,7 +58,11 @@ async function analyzeLesson() {
     }
 
     try {
-        // تجهيز الصور لـ Gemini (تحويلها إلى Base64)
+        // إنشاء كائن الاتصال (باستخدام x-goog-api-key)
+        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        // تجهيز الصور
         const imageParts = [];
         for (let i = 0; i < uploadedImages.length; i++) {
             const dataUrl = await new Promise((resolve) => {
@@ -68,43 +72,25 @@ async function analyzeLesson() {
             });
             const base64Data = dataUrl.split(',')[1];
             imageParts.push({
-                inline_data: {
-                    mime_type: uploadedImages[i].type,
-                    data: base64Data
+                inlineData: {
+                    data: base64Data,
+                    mimeType: uploadedImages[i].type
                 }
             });
         }
 
-        // إرسال الطلب إلى Gemini API
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: "أنت معلم خبير. اقرأ الصور التالية لدرس في مادة " + localStorage.getItem('selectedSubject') + " للصف " + localStorage.getItem('selectedGrade') + ". اشرح الدرس بشكل مبسط ومنظم، ثم قم بتوليد 5 أسئلة اختيار من متعدد لاختبار فهم الطالب. أعد النتيجة بصيغة نصية واضحة." },
-                            ...imageParts
-                        ]
-                    }]
-                })
-            }
-        );
-
-        const data = await response.json();
+        // إرسال الطلب
+        const prompt = `أنت معلم خبير. اقرأ الصور التالية لدرس في مادة ${localStorage.getItem('selectedSubject')} للصف ${localStorage.getItem('selectedGrade')}. اشرح الدرس بشكل مبسط ومنظم، ثم قم بتوليد 5 أسئلة اختيار من متعدد لاختبار فهم الطالب. أعد النتيجة بصيغة نصية واضحة.`;
         
-        let aiText = "حدث خطأ في الاتصال، حاول مرة أخرى.";
-        if (data.candidates && data.candidates[0].content) {
-            aiText = data.candidates[0].content.parts[0].text;
-        }
+        const result = await model.generateContent([prompt, ...imageParts]);
+        const response = await result.response;
+        const text = response.text();
 
-        resultBox.innerText = aiText;
+        // عرض النتيجة
+        resultBox.innerText = text;
 
     } catch (error) {
         console.error(error);
-        resultBox.innerText = "حدث خطأ أثناء الاتصال بـ Gemini. تأكد من صحة المفتاح.";
+        resultBox.innerText = "حدث خطأ أثناء الاتصال بـ Gemini. تأكد من صحة المفتاح أو أن الصور غير تالفة.";
     }
 }
