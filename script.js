@@ -1,3 +1,6 @@
+// ===== إعدادات Gemini (ضع مفتاحك هنا) =====
+const GEMINI_API_KEY = "AQ.Ab8RN6KMxBpYpfQxuj0ZOk5kkPYvJcDEfMUN47xpM5NjWNY-Vg";
+
 // ================= تسجيل الدخول =================
 function startApp() {
     const username = document.getElementById('studentName').value;
@@ -44,28 +47,67 @@ document.getElementById('images').addEventListener('change', function(event) {
     }
 });
 
-// ================= تحليل الصور (قراءة النص) =================
+// ================= تحليل الدرس باستخدام Gemini AI =================
 async function analyzeLesson() {
     const resultBox = document.getElementById('aiResult');
-    resultBox.innerText = "جاري قراءة النصوص من الصور...";
-    
+    resultBox.innerText = "جاري تحليل الدرس بواسطة الذكاء الاصطناعي...";
+
+    if (uploadedImages.length === 0) {
+        alert("الرجاء رفع صورة واحدة على الأقل");
+        return;
+    }
+
     try {
-        // تحميل مكتبة Tesseract.js المجانية (تحدث في المتصفح مباشرة)
-        const worker = await Tesseract.createWorker('ara');
-        
-        let fullText = "";
+        // تجهيز الصور لـ Gemini (تحويلها إلى Base64)
+        const imageParts = [];
         for (let i = 0; i < uploadedImages.length; i++) {
-            const { data: { text } } = await worker.recognize(uploadedImages[i]);
-            fullText += `\n--- صفحة ${i + 1} ---\n${text}`;
+            const dataUrl = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(uploadedImages[i]);
+            });
+            // استخراج البيانات الأساسية من الـ Base64
+            const base64Data = dataUrl.split(',')[1];
+            imageParts.push({
+                inline_data: {
+                    mime_type: uploadedImages[i].type,
+                    data: base64Data
+                }
+            });
         }
+
+        // إرسال الطلب إلى Gemini API
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: "أنت معلم خبير. اقرأ الصور التالية لدرس في مادة " + localStorage.getItem('selectedSubject') + " للصف " + localStorage.getItem('selectedGrade') + ". اشرح الدرس بشكل مبسط ومنظم، ثم قم بتوليد 5 أسئلة اختيار من متعدد لاختبار فهم الطالب. أعد النتيجة بصيغة نصية واضحة." },
+                            ...imageParts
+                        ]
+                    }]
+                })
+            }
+        );
+
+        const data = await response.json();
         
-        await worker.terminate();
-        
-        // عرض النص المستخرج
-        resultBox.innerText = `تم قراءة الدرس بنجاح!\n\nالنص المستخرج:\n${fullText}`;
-        
+        // استخراج النص الناتج من Gemini
+        let aiText = "حدث خطأ في الاتصال، حاول مرة أخرى.";
+        if (data.candidates && data.candidates[0].content) {
+            aiText = data.candidates[0].content.parts[0].text;
+        }
+
+        // عرض النتيجة في الصندوق
+        resultBox.innerText = aiText;
+
     } catch (error) {
         console.error(error);
-        resultBox.innerText = "حدث خطأ أثناء قراءة النص. حاول مرة أخرى.";
+        resultBox.innerText = "حدث خطأ أثناء الاتصال بـ Gemini. تأكد من صحة المفتاح.";
     }
 }
