@@ -1,5 +1,5 @@
-// ===== إعدادات Gemini (ضع مفتاحك هنا) =====
-const GEMINI_API_KEY = "AQ.Ab8RN6KMxBpYpfQxuj0ZOk5kkPYvJcDEfMUN47xpM5NjWNY-Vg";
+// ===== إعدادات Gemini (يقرأ المفتاح من Vercel Environment Variables) =====
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 // ================= تسجيل الدخول =================
 function startApp() {
@@ -76,7 +76,7 @@ async function analyzeLesson() {
             });
         }
 
-        // إرسال الطلب إلى Gemini API
+        // إرسال الطلب إلى Gemini API (باستخدام المفتاح من Vercel)
         const response = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
             {
