@@ -1,5 +1,5 @@
-// ===== إعدادات Gemini (يقرأ المفتاح من Vercel Environment Variables) =====
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+// ===== إعدادات Gemini (المفتاح يعمل مباشرة) =====
+const GEMINI_API_KEY = "AQ.Ab8RN6KMxBpYpfQxuj0ZOk5kkPYvJcDEfMUN47xpM5NjWNY-Vg";
 
 // ================= تسجيل الدخول =================
 function startApp() {
@@ -66,7 +66,6 @@ async function analyzeLesson() {
                 reader.onload = (e) => resolve(e.target.result);
                 reader.readAsDataURL(uploadedImages[i]);
             });
-            // استخراج البيانات الأساسية من الـ Base64
             const base64Data = dataUrl.split(',')[1];
             imageParts.push({
                 inline_data: {
@@ -76,7 +75,7 @@ async function analyzeLesson() {
             });
         }
 
-        // إرسال الطلب إلى Gemini API (باستخدام المفتاح من Vercel)
+        // إرسال الطلب إلى Gemini API
         const response = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
             {
@@ -97,13 +96,11 @@ async function analyzeLesson() {
 
         const data = await response.json();
         
-        // استخراج النص الناتج من Gemini
         let aiText = "حدث خطأ في الاتصال، حاول مرة أخرى.";
         if (data.candidates && data.candidates[0].content) {
             aiText = data.candidates[0].content.parts[0].text;
         }
 
-        // عرض النتيجة في الصندوق
         resultBox.innerText = aiText;
 
     } catch (error) {
