@@ -1,5 +1,5 @@
-// ===== إعدادات Gemini (المفتاح الصحيح الذي أرسلته لي) =====
-const GEMINI_API_KEY = "AQ.Ab8RN6JcD_tsrsAgx6Rt--bP-1VI92OQ7qTfRByA4wIBObMiDw";
+// ===== إعدادات Gemini (المفتاح الصحيح الذي يبدأ بـ AIza) =====
+const GEMINI_API_KEY = "AIzaSyATGm_YbVGArLaKXCVP-pIszrM1mHA1k";
 
 // ================= تسجيل الدخول =================
 function startApp() {
@@ -35,6 +35,65 @@ document.getElementById('images').addEventListener('change', function(event) {
     const files = event.target.files;
     if (files.length > maxImages) {
         alert(`يمكنك رفع ${maxImages} صور فقط.`);
+        return;
+    }
+    uploadedImages = files;
+    const preview = document.getElementById('preview');
+    preview.innerHTML = '';
+    for (let i = 0; i < files.length; i++) {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(files[i]);
+        preview.appendChild(img);
+    }
+});
+
+// ================= تحليل الدرس باستخدام Gemini AI =================
+async function analyzeLesson() {
+    const resultBox = document.getElementById('aiResult');
+    resultBox.innerText = "جاري تحليل الدرس بواسطة الذكاء الاصطناعي...";
+
+    if (uploadedImages.length === 0) {
+        alert("الرجاء رفع صورة واحدة على الأقل");
+        return;
+    }
+
+    try {
+        // إنشاء كائن الاتصال باستخدام المفتاح الصحيح
+        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        // تجهيز الصور
+        const imageParts = [];
+        for (let i = 0; i < uploadedImages.length; i++) {
+            const dataUrl = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(uploadedImages[i]);
+            });
+            const base64Data = dataUrl.split(',')[1];
+            imageParts.push({
+                inlineData: {
+                    data: base64Data,
+                    mimeType: uploadedImages[i].type
+                }
+            });
+        }
+
+        // إرسال الطلب
+        const prompt = `أنت معلم خبير. اقرأ الصور التالية لدرس في مادة ${localStorage.getItem('selectedSubject')} للصف ${localStorage.getItem('selectedGrade')}. اشرح الدرس بشكل مبسط ومنظم، ثم قم بتوليد 5 أسئلة اختيار من متعدد لاختبار فهم الطالب. أعد النتيجة بصيغة نصية واضحة.`;
+        
+        const result = await model.generateContent([prompt, ...imageParts]);
+        const response = await result.response;
+        const text = response.text();
+
+        // عرض النتيجة
+        resultBox.innerText = text;
+
+    } catch (error) {
+        console.error(error);
+        resultBox.innerText = "حدث خطأ أثناء الاتصال بـ Gemini. تأكد من صحة المفتاح أو أن الصور غير تالفة.";
+    }
+}        alert(`يمكنك رفع ${maxImages} صور فقط.`);
         return;
     }
     uploadedImages = files;
