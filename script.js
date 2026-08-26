@@ -1,5 +1,5 @@
-// ===== إعدادات Gemini (المفتاح الجديد النهائي AQ) =====
-const GEMINI_API_KEY = "AQ.Ab8RN6JcD_tsrsAgx6Rt--bP-1VI92OQ7qTfRByA4wIBObMiDw";
+// ===== إعدادات Gemini (المفتاح القديم AIza الذي تم فك تقييده) =====
+const GEMINI_API_KEY = "AIzaSyATGm_YbVGArLaKXCVP-pIszrM1mHA1k";
 
 // ================= تسجيل الدخول =================
 function startApp() {
@@ -47,7 +47,7 @@ document.getElementById('images').addEventListener('change', function(event) {
     }
 });
 
-// ================= تحليل الدرس باستخدام Gemini API (المفتاح الجديد AQ) =================
+// ================= تحليل الدرس باستخدام Gemini API (المكتبة الرسمية) =================
 async function analyzeLesson() {
     const resultBox = document.getElementById('aiResult');
     resultBox.innerText = "جاري تحليل الدرس بواسطة الذكاء الاصطناعي...";
@@ -58,6 +58,10 @@ async function analyzeLesson() {
     }
 
     try {
+        // إنشاء كائن الاتصال باستخدام المكتبة الرسمية
+        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
         // تجهيز الصور
         const imageParts = [];
         for (let i = 0; i < uploadedImages.length; i++) {
@@ -68,39 +72,22 @@ async function analyzeLesson() {
             });
             const base64Data = dataUrl.split(',')[1];
             imageParts.push({
-                inline_data: {
+                inlineData: {
                     data: base64Data,
-                    mime_type: uploadedImages[i].type
+                    mimeType: uploadedImages[i].type
                 }
             });
         }
 
-        // إرسال الطلب باستخدام طريقة x-goog-api-key (الطريقة الصحيحة لمفاتيح AQ الجديدة)
+        // إرسال الطلب للمكتبة الرسمية
         const prompt = `أنت معلم خبير. اقرأ الصور التالية لدرس في مادة ${localStorage.getItem('selectedSubject')} للصف ${localStorage.getItem('selectedGrade')}. اشرح الدرس بشكل مبسط ومنظم، ثم قم بتوليد 5 أسئلة اختيار من متعدد لاختبار فهم الطالب. أعد النتيجة بصيغة نصية واضحة.`;
+        
+        const result = await model.generateContent([prompt, ...imageParts]);
+        const response = await result.response;
+        const text = response.text();
 
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-goog-api-key': GEMINI_API_KEY
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{ text: prompt }, ...imageParts]
-                    }]
-                })
-            }
-        );
-
-        const data = await response.json();
-        let aiText = "حدث خطأ في الاتصال، حاول مرة أخرى.";
-        if (data.candidates && data.candidates[0].content) {
-            aiText = data.candidates[0].content.parts[0].text;
-        }
-
-        resultBox.innerText = aiText;
+        // عرض النتيجة
+        resultBox.innerText = text;
 
     } catch (error) {
         console.error(error);
