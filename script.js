@@ -1,5 +1,5 @@
-// ===== إعدادات Gemini (المفتاح الجديد AQ) =====
-const GEMINI_API_KEY = "AQ.Ab8RN6KYg8z5NgNSmIede4HiuRIkDafr9CJuFie5TRFEnkfcA";
+// ===== إعدادات Gemini (المفتاح الصحيح AIza - يعمل من المتصفح مباشرة) =====
+const GEMINI_API_KEY = "AIzaSyATGm_YbVGArLaKXCVP-pIszrM1mHA1k";
 
 // ================= تسجيل الدخول =================
 function startApp() {
@@ -75,7 +75,7 @@ async function analyzeLesson() {
             });
         }
 
-        // إرسال الطلب مع استخدام Authorization: Bearer (مهم جداً لمفاتيح AQ)
+        // إرسال الطلب باستخدام x-goog-api-key (الطريقة الصحيحة لمفاتيح AIza)
         const prompt = `أنت معلم خبير. اقرأ الصور التالية لدرس في مادة ${localStorage.getItem('selectedSubject')} للصف ${localStorage.getItem('selectedGrade')}. اشرح الدرس بشكل مبسط ومنظم، ثم قم بتوليد 5 أسئلة اختيار من متعدد لاختبار فهم الطالب. أعد النتيجة بصيغة نصية واضحة.`;
 
         const response = await fetch(
@@ -84,7 +84,7 @@ async function analyzeLesson() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${GEMINI_API_KEY}`
+                    'x-goog-api-key': GEMINI_API_KEY
                 },
                 body: JSON.stringify({
                     contents: [{
