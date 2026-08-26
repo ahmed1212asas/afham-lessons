@@ -1,4 +1,4 @@
-// ===== إعدادات Gemini (مفتاح AQ الجديد) =====
+// ===== إعدادات Gemini (المفتاح الجديد AQ) =====
 const GEMINI_API_KEY = "AQ.Ab8RN6KYg8z5NgNSmIede4HiuRIkDafr9CJuFie5TRFEnkfcA";
 
 // ================= تسجيل الدخول =================
@@ -47,7 +47,7 @@ document.getElementById('images').addEventListener('change', function(event) {
     }
 });
 
-// ================= تحليل الدرس باستخدام Gemini API (معدل لمفاتيح AQ) =================
+// ================= تحليل الدرس باستخدام Gemini API =================
 async function analyzeLesson() {
     const resultBox = document.getElementById('aiResult');
     resultBox.innerText = "جاري تحليل الدرس بواسطة الذكاء الاصطناعي...";
@@ -84,7 +84,7 @@ async function analyzeLesson() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${GEMINI_API_KEY}` // التعديل الحاسم هنا
+                    'Authorization': `Bearer ${GEMINI_API_KEY}`
                 },
                 body: JSON.stringify({
                     contents: [{
