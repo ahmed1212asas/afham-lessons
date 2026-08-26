@@ -1,5 +1,5 @@
-// ===== إعدادات Gemini (المفتاح الصحيح AIza - يعمل من المتصفح مباشرة) =====
-const GEMINI_API_KEY = "AIzaSyATGm_YbVGArLaKXCVP-pIszrM1mHA1k";
+// ===== إعدادات Gemini (المفتاح الجديد النهائي AQ) =====
+const GEMINI_API_KEY = "AQ.Ab8RN6JcD_tsrsAgx6Rt--bP-1VI92OQ7qTfRByA4wIBObMiDw";
 
 // ================= تسجيل الدخول =================
 function startApp() {
@@ -47,7 +47,7 @@ document.getElementById('images').addEventListener('change', function(event) {
     }
 });
 
-// ================= تحليل الدرس باستخدام Gemini API =================
+// ================= تحليل الدرس باستخدام Gemini API (المفتاح الجديد AQ) =================
 async function analyzeLesson() {
     const resultBox = document.getElementById('aiResult');
     resultBox.innerText = "جاري تحليل الدرس بواسطة الذكاء الاصطناعي...";
@@ -75,7 +75,7 @@ async function analyzeLesson() {
             });
         }
 
-        // إرسال الطلب باستخدام x-goog-api-key (الطريقة الصحيحة لمفاتيح AIza)
+        // إرسال الطلب باستخدام طريقة x-goog-api-key (الطريقة الصحيحة لمفاتيح AQ الجديدة)
         const prompt = `أنت معلم خبير. اقرأ الصور التالية لدرس في مادة ${localStorage.getItem('selectedSubject')} للصف ${localStorage.getItem('selectedGrade')}. اشرح الدرس بشكل مبسط ومنظم، ثم قم بتوليد 5 أسئلة اختيار من متعدد لاختبار فهم الطالب. أعد النتيجة بصيغة نصية واضحة.`;
 
         const response = await fetch(
