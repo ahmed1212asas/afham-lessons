@@ -1,7 +1,6 @@
-// ===== إعدادات Gemini (المفتاح القديم AIza الذي تم فك تقييده) =====
+// ===== إعدادات Gemini (المفتاح الصحيح AIza) =====
 const GEMINI_API_KEY = "AIzaSyATGm_YbVGArLaKXCVP-pIszrM1mHA1k";
 
-// ================= تسجيل الدخول =================
 function startApp() {
     const username = document.getElementById('studentName').value;
     if (username === "") {
@@ -13,7 +12,6 @@ function startApp() {
     document.getElementById('step-subject').classList.add('active');
 }
 
-// ================= اختيار الصف والمادة =================
 function startLesson() {
     const grade = document.getElementById('grade').value;
     const subject = document.getElementById('subject').value;
@@ -27,7 +25,6 @@ function startLesson() {
     document.getElementById('step-upload').classList.add('active');
 }
 
-// ================= شاشة رفع الصور =================
 let uploadedImages = [];
 const maxImages = 5;
 
@@ -47,7 +44,6 @@ document.getElementById('images').addEventListener('change', function(event) {
     }
 });
 
-// ================= تحليل الدرس باستخدام Gemini API (المكتبة الرسمية) =================
 async function analyzeLesson() {
     const resultBox = document.getElementById('aiResult');
     resultBox.innerText = "جاري تحليل الدرس بواسطة الذكاء الاصطناعي...";
@@ -58,11 +54,9 @@ async function analyzeLesson() {
     }
 
     try {
-        // إنشاء كائن الاتصال باستخدام المكتبة الرسمية
         const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        // تجهيز الصور
         const imageParts = [];
         for (let i = 0; i < uploadedImages.length; i++) {
             const dataUrl = await new Promise((resolve) => {
@@ -79,14 +73,11 @@ async function analyzeLesson() {
             });
         }
 
-        // إرسال الطلب للمكتبة الرسمية
         const prompt = `أنت معلم خبير. اقرأ الصور التالية لدرس في مادة ${localStorage.getItem('selectedSubject')} للصف ${localStorage.getItem('selectedGrade')}. اشرح الدرس بشكل مبسط ومنظم، ثم قم بتوليد 5 أسئلة اختيار من متعدد لاختبار فهم الطالب. أعد النتيجة بصيغة نصية واضحة.`;
         
         const result = await model.generateContent([prompt, ...imageParts]);
         const response = await result.response;
         const text = response.text();
-
-        // عرض النتيجة
         resultBox.innerText = text;
 
     } catch (error) {
