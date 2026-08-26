@@ -1,16 +1,96 @@
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
-    background: #f0f4ff;
+// ===== إعدادات Gemini (المفتاح الصحيح AIza) =====
+const GEMINI_API_KEY = "AIzaSyATGm_YbVGArLaKXCVP-pIszrM1mHA1k";
+
+// ================= تسجيل الدخول =================
+function startApp() {
+    const username = document.getElementById('studentName').value;
+    if (username === "") {
+        alert("الرجاء إدخال اسم الطالب");
+        return;
+    }
+    localStorage.setItem('studentName', username);
+    document.getElementById('step-login').classList.remove('active');
+    document.getElementById('step-subject').classList.add('active');
 }
-.container { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center; }
-.step { display: none; }
-.step.active { display: block; }
-button { background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 16px; margin-top: 15px; cursor: pointer; width: 100%; }
-input, select { padding: 10px; margin: 8px 0; width: 100%; border: 1px solid #ccc; border-radius: 8px; }
-#preview img { width: 60px; height: 60px; margin: 5px; border-radius: 5px; border: 1px solid #ccc; }
-#aiResult { margin-top: 20px; text-align: right; padding: 15px; background: #f9f9f9; border-radius: 8px; white-space: pre-wrap; }
+
+// ================= اختيار الصف والمادة =================
+function startLesson() {
+    const grade = document.getElementById('grade').value;
+    const subject = document.getElementById('subject').value;
+    if (grade === "" || subject === "") {
+        alert("الرجاء اختيار الصف والمادة");
+        return;
+    }
+    localStorage.setItem('selectedGrade', grade);
+    localStorage.setItem('selectedSubject', subject);
+    document.getElementById('step-subject').classList.remove('active');
+    document.getElementById('step-upload').classList.add('active');
+}
+
+// ================= شاشة رفع الصور =================
+let uploadedImages = [];
+const maxImages = 5;
+
+document.getElementById('images').addEventListener('change', function(event) {
+    const files = event.target.files;
+    if (files.length > maxImages) {
+        alert(`يمكنك رفع ${maxImages} صور فقط.`);
+        return;
+    }
+    uploadedImages = files;
+    const preview = document.getElementById('preview');
+    preview.innerHTML = '';
+    for (let i = 0; i < files.length; i++) {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(files[i]);
+        preview.appendChild(img);
+    }
+});
+
+// ================= تحليل الدرس باستخدام Gemini AI =================
+async function analyzeLesson() {
+    const resultBox = document.getElementById('aiResult');
+    resultBox.innerText = "جاري تحليل الدرس بواسطة الذكاء الاصطناعي...";
+
+    if (uploadedImages.length === 0) {
+        alert("الرجاء رفع صورة واحدة على الأقل");
+        return;
+    }
+
+    try {
+        // إنشاء كائن الاتصال باستخدام المفتاح الصحيح
+        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        // تجهيز الصور
+        const imageParts = [];
+        for (let i = 0; i < uploadedImages.length; i++) {
+            const dataUrl = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(uploadedImages[i]);
+            });
+            const base64Data = dataUrl.split(',')[1];
+            imageParts.push({
+                inlineData: {
+                    data: base64Data,
+                    mimeType: uploadedImages[i].type
+                }
+            });
+        }
+
+        // إرسال الطلب
+        const prompt = `أنت معلم خبير. اقرأ الصور التالية لدرس في مادة ${localStorage.getItem('selectedSubject')} للصف ${localStorage.getItem('selectedGrade')}. اشرح الدرس بشكل مبسط ومنظم، ثم قم بتوليد 5 أسئلة اختيار من متعدد لاختبار فهم الطالب. أعد النتيجة بصيغة نصية واضحة.`;
+        
+        const result = await model.generateContent([prompt, ...imageParts]);
+        const response = await result.response;
+        const text = response.text();
+
+        // عرض النتيجة
+        resultBox.innerText = text;
+
+    } catch (error) {
+        console.error(error);
+        resultBox.innerText = "حدث خطأ أثناء الاتصال بـ Gemini. تأكد من صحة المفتاح أو أن الصور غير تالفة.";
+    }
+    }
