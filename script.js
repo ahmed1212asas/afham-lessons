@@ -1,6 +1,4 @@
-// ===== إعدادات Gemini (المفتاح الصحيح AIza) =====
-const GEMINI_API_KEY = "AIzaSyATGm_YbVGArLaKXCVP-pIszrM1mHA1k";
-
+// ================= تسجيل الدخول =================
 function startApp() {
     const username = document.getElementById('studentName').value;
     if (username === "") {
@@ -12,6 +10,7 @@ function startApp() {
     document.getElementById('step-subject').classList.add('active');
 }
 
+// ================= اختيار الصف والمادة =================
 function startLesson() {
     const grade = document.getElementById('grade').value;
     const subject = document.getElementById('subject').value;
@@ -25,6 +24,7 @@ function startLesson() {
     document.getElementById('step-upload').classList.add('active');
 }
 
+// ================= شاشة رفع الصور =================
 let uploadedImages = [];
 const maxImages = 5;
 
@@ -44,9 +44,10 @@ document.getElementById('images').addEventListener('change', function(event) {
     }
 });
 
+// ================= قراءة النصوص من الصور (Tesseract.js) =================
 async function analyzeLesson() {
     const resultBox = document.getElementById('aiResult');
-    resultBox.innerText = "جاري تحليل الدرس بواسطة الذكاء الاصطناعي...";
+    resultBox.innerText = "جاري قراءة النصوص من الصور...";
 
     if (uploadedImages.length === 0) {
         alert("الرجاء رفع صورة واحدة على الأقل");
@@ -54,34 +55,22 @@ async function analyzeLesson() {
     }
 
     try {
-        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-        const imageParts = [];
-        for (let i = 0; i < uploadedImages.length; i++) {
-            const dataUrl = await new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.readAsDataURL(uploadedImages[i]);
-            });
-            const base64Data = dataUrl.split(',')[1];
-            imageParts.push({
-                inlineData: {
-                    data: base64Data,
-                    mimeType: uploadedImages[i].type
-                }
-            });
-        }
-
-        const prompt = `أنت معلم خبير. اقرأ الصور التالية لدرس في مادة ${localStorage.getItem('selectedSubject')} للصف ${localStorage.getItem('selectedGrade')}. اشرح الدرس بشكل مبسط ومنظم، ثم قم بتوليد 5 أسئلة اختيار من متعدد لاختبار فهم الطالب. أعد النتيجة بصيغة نصية واضحة.`;
+        // تهيئة المكتبة لقراءة اللغة العربية
+        const worker = await Tesseract.createWorker('ara');
         
-        const result = await model.generateContent([prompt, ...imageParts]);
-        const response = await result.response;
-        const text = response.text();
-        resultBox.innerText = text;
+        let fullText = "";
+        for (let i = 0; i < uploadedImages.length; i++) {
+            const { data: { text } } = await worker.recognize(uploadedImages[i]);
+            fullText += `\n--- صفحة ${i + 1} ---\n${text}`;
+        }
+        
+        await worker.terminate();
+        
+        // عرض النص المستخرج
+        resultBox.innerText = `تم قراءة الدرس بنجاح!\n\nالنص المستخرج:\n${fullText}`;
 
     } catch (error) {
         console.error(error);
-        resultBox.innerText = "حدث خطأ أثناء الاتصال بـ Gemini. تأكد من صحة المفتاح.";
+        resultBox.innerText = "حدث خطأ أثناء قراءة النص. حاول مرة أخرى.";
     }
 }
