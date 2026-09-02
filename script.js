@@ -1,3 +1,5 @@
+// ================= إعدادات الاتصال بالخادم =================
+
 // ================= تسجيل الدخول =================
 function startApp() {
     const username = document.getElementById('studentName').value;
@@ -44,10 +46,10 @@ document.getElementById('images').addEventListener('change', function(event) {
     }
 });
 
-// ================= قراءة النصوص من الصور (Tesseract.js) =================
+// ================= تحليل الدرس (الاتصال بالخادم) =================
 async function analyzeLesson() {
     const resultBox = document.getElementById('aiResult');
-    resultBox.innerText = "جاري قراءة النصوص من الصور...";
+    resultBox.innerText = "جاري تحليل الدرس بواسطة الذكاء الاصطناعي...";
 
     if (uploadedImages.length === 0) {
         alert("الرجاء رفع صورة واحدة على الأقل");
@@ -55,22 +57,44 @@ async function analyzeLesson() {
     }
 
     try {
-        // تهيئة المكتبة لقراءة اللغة العربية
-        const worker = await Tesseract.createWorker('ara');
-        
-        let fullText = "";
+        const imageParts = [];
         for (let i = 0; i < uploadedImages.length; i++) {
-            const { data: { text } } = await worker.recognize(uploadedImages[i]);
-            fullText += `\n--- صفحة ${i + 1} ---\n${text}`;
+            const dataUrl = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(uploadedImages[i]);
+            });
+            imageParts.push({
+                inlineData: {
+                    data: dataUrl.split(',')[1],
+                    mimeType: uploadedImages[i].type
+                }
+            });
         }
-        
-        await worker.terminate();
-        
-        // عرض النص المستخرج
-        resultBox.innerText = `تم قراءة الدرس بنجاح!\n\nالنص المستخرج:\n${fullText}`;
+
+        // إرسال الصور إلى الخادم الوسيط (api/analyze)
+        const response = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                images: imageParts,
+                subject: localStorage.getItem('selectedSubject'),
+                grade: localStorage.getItem('selectedGrade')
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.result) {
+            resultBox.innerText = data.result;
+        } else {
+            resultBox.innerText = "حدث خطأ: " + (data.error || "غير معروف");
+        }
 
     } catch (error) {
         console.error(error);
-        resultBox.innerText = "حدث خطأ أثناء قراءة النص. حاول مرة أخرى.";
+        resultBox.innerText = "حدث خطأ في الاتصال بالخادم. حاول مرة أخرى.";
     }
 }
